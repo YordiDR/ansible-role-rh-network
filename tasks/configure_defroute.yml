@@ -1,0 +1,29 @@
+---
+
+# defroute config
+- name: "Check if default route status on {{ interface.name }}"
+  command: egrep '^DEFROUTE=' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+  register: defroute_configured_result
+  failed_when: false
+  changed_when: false
+  
+- when: defroute_configured_result.rc == 0
+  block:
+    - name: "Check if default route status is correct on {{ interface.name }}"
+      command: egrep '^DEFROUTE={{ interface.defroute }}$' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+      register: defroute_correct_result
+      failed_when: false
+      changed_when: false
+
+    - name: "Change configured default route status on {{ interface.name }}"
+      replace:
+        path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+        regexp: '(^DEFROUTE=)(.*)$'
+        replace: '\g<1>{{ interface.defroute }}'
+      when: defroute_correct_result.rc == 1
+
+- name: "Configure default route status on {{ interface.name }}"
+  lineinfile:
+    path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+    line: "DEFROUTE={{ interface.defroute }}"
+  when: defroute_configured_result.rc == 1

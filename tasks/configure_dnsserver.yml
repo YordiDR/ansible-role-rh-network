@@ -1,0 +1,29 @@
+---
+
+# DNS server config
+- name: "Check if DNS server is configured on {{ interface.name }}"
+  command: egrep '^DNS1=' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+  register: dnsserver_configured_result
+  failed_when: false
+  changed_when: false
+
+- when: dnsserver_configured_result.rc == 0
+  block:
+    - name: "Check if DNS server configuration is correct on {{ interface.name }}"
+      command: egrep '^DNS1={{ interface.dnsserver }}$' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+      register: dnsserver_correct_result
+      failed_when: false
+      changed_when: false
+
+    - name: "Change configured DNS server on {{ interface.name }}"
+      replace:
+        path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+        regexp: '(^DNS1=)(.*)$'
+        replace: '\g<1>{{ interface.dnsserver }}'
+      when: dnsserver_correct_result.rc == 1
+
+- name: "Configure new DNS server on {{ interface.name }}"
+  lineinfile:
+    path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+    line: "DNS1={{ interface.dnsserver }}"
+  when: dnsserver_configured_result.rc == 1

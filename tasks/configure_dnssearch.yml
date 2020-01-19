@@ -1,0 +1,29 @@
+---
+
+# DNS search domain config
+- name: "Check if DNS search domain is configured on {{ interface.name }}"
+  command: egrep '^DOMAIN=' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+  register: dnssearch_configured_result
+  failed_when: false
+  changed_when: false
+  
+- when: dnssearch_configured_result.rc == 0
+  block:
+    - name: "Check if DNS search configuration is correct on {{ interface.name }}"
+      command: egrep '^DOMAIN={{ interface.dnssearch }}$' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+      register: dnssearch_correct_result
+      failed_when: false
+      changed_when: false
+
+    - name: "Change configured DNS search domain on {{ interface.name }}"
+      replace:
+        path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+        regexp: '(^DOMAIN=)(.*)$'
+        replace: '\g<1>{{ interface.dnssearch }}'
+      when: dnssearch_correct_result.rc == 1
+
+- name: "Configure new DNS search domain on {{ interface.name }}"
+  lineinfile:
+    path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+    line: "DOMAIN={{ interface.dnssearch }}"
+  when: dnssearch_configured_result.rc == 1

@@ -1,0 +1,12 @@
+---
+- include: configure_dnsserver.yml
+  when: interface.dnsserver is defined
+
+- include: configure_dnssearch.yml
+  when: interface.dnssearch is defined
+
+- include: configure_gateway.yml
+  when: interface.gateway is defined
+
+- include: configure_defroute.yml
+  when: interface.defroute is defined 
