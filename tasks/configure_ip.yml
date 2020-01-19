@@ -8,9 +8,11 @@
   changed_when: false
 
 - when: bootproto_configured_result.rc == 0
+  vars:
+    interfacebootproto: "{{ 'dhcp' if not interface.ip is defined or interface.ip == 'dhcp' else 'none' }}"
   block:
     - name: "Check if bootproto configuration is correct on {{ interface.name }}"
-      command: egrep '^BOOTPROTO=none$' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+      command: egrep '^BOOTPROTO={{ interfacebootproto }}$' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
       register: bootproto_correct_result
       failed_when: false
       changed_when: false
@@ -19,13 +21,15 @@
       replace:
         path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
         regexp: '(^BOOTPROTO=)(.*)$'
-        replace: '\g<1>none'
+        replace: '\g<1>{{ interfacebootproto }}'
       when: bootproto_correct_result.rc == 1
 
 - name: "Configure new bootproto on {{ interface.name }}"
+  vars:
+    interfacebootproto: "{{ 'dhcp' if not interface.ip is defined or interface.ip == 'dhcp' else 'none' }}"
   lineinfile:
     path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
-    line: "BOOTPROTO=none"
+    line: "BOOTPROTO={{ interfacebootproto }}"
   when: bootproto_configured_result.rc == 1
 
 # IP address config
@@ -34,8 +38,9 @@
   register: ipaddr_configured_result
   failed_when: false
   changed_when: false
+  when: interface.ip is defined and interface.ip != 'dhcp'
   
-- when: ipaddr_configured_result.rc == 0
+- when: interface.ip is defined and interface.ip != 'dhcp' and ipaddr_configured_result.rc == 0
   block:
     - name: "Check if IP address configuration is correct on {{ interface.name }}"
       command: egrep '^IPADDR={{ interface.ip }}$' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
@@ -54,7 +59,7 @@
   lineinfile:
     path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
     line: "IPADDR={{ interface.ip }}"
-  when: ipaddr_configured_result.rc == 1
+  when: interface.ip is defined and interface.ip != 'dhcp' and ipaddr_configured_result.rc == 1
 
 # IP netmask config
 - name: "Check if netmask is configured on {{ interface.name }}"
@@ -62,8 +67,9 @@
   register: netmask_configured_result
   failed_when: false
   changed_when: false
-  
-- when: netmask_configured_result.rc == 0
+  when: interface.ip is defined and interface.ip != 'dhcp'
+
+- when: interface.ip is defined and interface.ip != 'dhcp' and netmask_configured_result.rc == 0
   block:
     - name: "Check if netmask configuration is correct on {{ interface.name }}"
       command: egrep '^NETMASK={{ interface.netmask }}$' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
@@ -82,4 +88,4 @@
   lineinfile:
     path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
     line: "NETMASK={{ interface.netmask }}"
-  when: netmask_configured_result.rc == 1
+  when: interface.ip is defined and interface.ip != 'dhcp' and netmask_configured_result.rc == 1
