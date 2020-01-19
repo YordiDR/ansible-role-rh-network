@@ -1,3 +1,8 @@
 ---
 - include: configure_interface.yml interface={{ item }}
   with_items: "{{ rhnetwork_interfaces }}"
+
+- name: "Restart network service"
+  service:
+    name: network
+    state: restarted
