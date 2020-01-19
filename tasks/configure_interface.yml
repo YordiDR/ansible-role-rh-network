@@ -9,4 +9,7 @@
   when: interface.gateway is defined
 
 - include: configure_defroute.yml
-  when: interface.defroute is defined 
+  when: interface.defroute is defined
+
+- include: configure_ip.yml
+  when: interface.ip is defined

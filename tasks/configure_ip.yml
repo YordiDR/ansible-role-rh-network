@@ -1,0 +1,85 @@
+---
+
+# bootproto config
+- name: "Check if bootproto is configured on {{ interface.name }}"
+  command: egrep '^BOOTPROTO=' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+  register: bootproto_configured_result
+  failed_when: false
+  changed_when: false
+
+- when: bootproto_configured_result.rc == 0
+  block:
+    - name: "Check if bootproto configuration is correct on {{ interface.name }}"
+      command: egrep '^BOOTPROTO=none$' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+      register: bootproto_correct_result
+      failed_when: false
+      changed_when: false
+
+    - name: "Change configured bootproto on {{ interface.name }}"
+      replace:
+        path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+        regexp: '(^BOOTPROTO=)(.*)$'
+        replace: '\g<1>none'
+      when: bootproto_correct_result.rc == 1
+
+- name: "Configure new bootproto on {{ interface.name }}"
+  lineinfile:
+    path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+    line: "BOOTPROTO=none"
+  when: bootproto_configured_result.rc == 1
+
+# IP address config
+- name: "Check if IP address is configured on {{ interface.name }}"
+  command: egrep '^IPADDR=' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+  register: ipaddr_configured_result
+  failed_when: false
+  changed_when: false
+  
+- when: ipaddr_configured_result.rc == 0
+  block:
+    - name: "Check if IP address configuration is correct on {{ interface.name }}"
+      command: egrep '^IPADDR={{ interface.ip }}$' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+      register: ipaddr_correct_result
+      failed_when: false
+      changed_when: false
+
+    - name: "Change configured IP address on {{ interface.name }}"
+      replace:
+        path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+        regexp: '(^IPADDR=)(.*)$'
+        replace: '\g<1>{{ interface.ip }}'
+      when: ipaddr_correct_result.rc == 1
+
+- name: "Configure new IP address on {{ interface.name }}"
+  lineinfile:
+    path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+    line: "IPADDR={{ interface.ip }}"
+  when: ipaddr_configured_result.rc == 1
+
+# IP netmask config
+- name: "Check if netmask is configured on {{ interface.name }}"
+  command: egrep '^NETMASK=' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+  register: netmask_configured_result
+  failed_when: false
+  changed_when: false
+  
+- when: netmask_configured_result.rc == 0
+  block:
+    - name: "Check if netmask configuration is correct on {{ interface.name }}"
+      command: egrep '^NETMASK={{ interface.netmask }}$' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+      register: netmask_correct_result
+      failed_when: false
+      changed_when: false
+
+    - name: "Change configured netmask on {{ interface.name }}"
+      replace:
+        path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+        regexp: '(^NETMASK=)(.*)$'
+        replace: '\g<1>{{ interface.netmask }}'
+      when: netmask_correct_result.rc == 1
+
+- name: "Configure new netmask on {{ interface.name }}"
+  lineinfile:
+    path: "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
+    line: "NETMASK={{ interface.netmask }}"
+  when: netmask_configured_result.rc == 1
