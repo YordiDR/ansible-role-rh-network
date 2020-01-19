@@ -1,7 +1,7 @@
 ---
 
 # defroute config
-- name: "Check if default route status on {{ interface.name }}"
+- name: "Check default route status on {{ interface.name }}"
   command: egrep '^DEFROUTE=' "{{ rhnetwork_scriptsLocation }}{{ interface.name }}"
   register: defroute_configured_result
   failed_when: false
